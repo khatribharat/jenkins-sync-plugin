@@ -48,6 +48,11 @@ import java.util.logging.Logger;
 import static io.fabric8.jenkins.openshiftsync.CredentialsUtils.updateSourceCredentials;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
+import static io.fabric8.jenkins.openshiftsync.Annotations.GROOVY_SANDBOX;
+import static io.fabric8.jenkins.openshiftsync.OpenShiftUtils.getAnnotation;
+import static io.fabric8.jenkins.openshiftsync.OpenShiftUtils.addAnnotation;
+import static io.fabric8.jenkins.openshiftsync.OpenShiftUtils.removeAnnotation;
+
 
 public class BuildConfigToJobMapper {
 	public static final String JENKINS_PIPELINE_BUILD_STRATEGY = "JenkinsPipeline";
@@ -101,7 +106,12 @@ public class BuildConfigToJobMapper {
 				return null;
 			}
 		} else {
-			return new CpsFlowDefinition(jenkinsfile, true);
+			boolean sandbox = true;
+			String sandboxFlag = getAnnotation(bc, GROOVY_SANDBOX);
+			if (sandboxFlag != null && sandboxFlag.equalsIgnoreCase("false")) {
+			  sandbox = false;
+      }
+      return new CpsFlowDefinition(jenkinsfile, sandbox);
 		}
 	}
 
@@ -162,6 +172,12 @@ public class BuildConfigToJobMapper {
 
 		if (definition instanceof CpsFlowDefinition) {
 			CpsFlowDefinition cpsFlowDefinition = (CpsFlowDefinition) definition;
+			boolean sandbox = cpsFlowDefinition.isSandbox();
+			if (sandbox) {
+			  removeAnnotation(buildConfig, GROOVY_SANDBOX);
+      } else {
+			  addAnnotation(buildConfig, GROOVY_SANDBOX, "false");
+      }
 			String jenkinsfile = cpsFlowDefinition.getScript();
 			if (jenkinsfile != null && jenkinsfile.trim().length() > 0
 					&& !jenkinsfile.equals(jenkinsPipelineStrategy.getJenkinsfile())) {

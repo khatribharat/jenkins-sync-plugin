@@ -551,6 +551,17 @@ public class OpenShiftUtils {
 		annotations.put(name, value);
 	}
 
+  public static void removeAnnotation(HasMetadata resource, String name) {
+    ObjectMeta metadata = resource.getMetadata();
+    if (metadata != null) {
+      metadata = new ObjectMeta();
+      Map<String, String> annotations = metadata.getAnnotations();
+      if (annotations != null) {
+        annotations.remove(name);
+      }
+    }
+  }
+
 	public static String getNamespace(HasMetadata resource) {
 		ObjectMeta metadata = resource.getMetadata();
 		if (metadata != null) {
